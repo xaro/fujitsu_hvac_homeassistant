@@ -1,0 +1,16 @@
+{
+  "domain": "fujitsu_hvac",
+  "name": "Fujitsu HVAC",
+  "documentation": "",
+  "iot_class": "local_polling",
+  "issue_tracker": "",
+  "version": "0.0.0",
+  "config_flow": true,
+  "integration_type": "hub",
+  "requirements": [
+    "git+https://github.com/xaro/fujitsu_hvac.git@dev#fujitsu_hvac==0.0.1"
+  ],
+  "codeowners": [
+    "@xaro"
+  ]
+}
