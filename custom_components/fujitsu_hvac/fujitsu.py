@@ -11,23 +11,12 @@ HEADERS = {
 SESSION_ERROR = "-13"
 
 
-async def on_request_start(session, context, params):
-    logging.getLogger("aiohttp.client").debug(f"Starting request <{params}>")
-    logging.getLogger("aiohttp.client").debug(f"Starting with <{session}>")
-
-
 class FujitsuHvac:
     """Client for the Fujitsu HVAC API"""
 
     def __init__(self, base_url: str, username: str, password: str) -> None:
-        logging.basicConfig(level=logging.DEBUG)
-        trace_config = aiohttp.TraceConfig()
-        trace_config.on_request_start.append(on_request_start)
         self.session = aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(ssl=False),
-            trace_configs=[trace_config],
             cookie_jar=aiohttp.CookieJar(unsafe=True),
-            trust_env=True,
         )
 
         self.base_url = base_url
@@ -39,7 +28,7 @@ class FujitsuHvac:
 
         # Ensure that we are not logged in before, if not will get
         # error 4
-        # await self.logout()
+        await self.logout()
 
         # TODO: Handle failures like bad user/pass
         payload = {
@@ -48,9 +37,8 @@ class FujitsuHvac:
             "logintime": (datetime.datetime.now()).isoformat(),
         }
 
-        self.session.cookie_jar.clear()
         async with self.session.post(
-            self.url("login.cgi"), data=payload, headers=HEADERS, ssl=False
+            self.url("login.cgi"), data=payload, headers=HEADERS
         ) as response:
             response_body = await response.text()
             if response_body != "0":
