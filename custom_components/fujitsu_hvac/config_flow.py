@@ -56,17 +56,30 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry):
         return FujitsuHvacOptionsFlowHandler(config_entry)
 
-    async def _show_config_form(self, user_input):  # pylint: disable=unused-argument
+    async def _show_config_form(self, user_input):
         """Show the configuration form to edit data."""
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_URL, default=user_input[CONF_URL], description="URL"
+                        CONF_URL,
+                        default=user_input[CONF_URL],
+                        msg="URL",
+                        description="URL",
                     ): str,
-                    vol.Required(CONF_USERNAME, default=user_input[CONF_USERNAME]): str,
-                    vol.Required(CONF_PASSWORD, default=user_input[CONF_PASSWORD]): str,
+                    vol.Required(
+                        CONF_USERNAME,
+                        msg="Username",
+                        description="Username",
+                        default=user_input[CONF_USERNAME],
+                    ): str,
+                    vol.Required(
+                        CONF_PASSWORD,
+                        msg="Password",
+                        description="Password",
+                        default=user_input[CONF_PASSWORD],
+                    ): str,
                 }
             ),
             errors=self._errors,
