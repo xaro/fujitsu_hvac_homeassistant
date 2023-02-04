@@ -3,7 +3,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import voluptuous as vol
 
-from fujitsu import fujitsu
+from .fujitsu import FujitsuHvac
 
 from .const import (
     CONF_URL,
@@ -39,7 +39,7 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     data=user_input,
                 )
             else:
-                self._errors["base"] = "auth"
+                self._errors["base"] = "Error testing login"
 
             return await self._show_config_form(user_input)
 
@@ -62,7 +62,9 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_URL, default=user_input[CONF_URL]): str,
+                    vol.Required(
+                        CONF_URL, default=user_input[CONF_URL], description="URL"
+                    ): str,
                     vol.Required(CONF_USERNAME, default=user_input[CONF_USERNAME]): str,
                     vol.Required(CONF_PASSWORD, default=user_input[CONF_PASSWORD]): str,
                 }
@@ -73,11 +75,11 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def _test_credentials(self, url, username, password):
         """Return true if credentials is valid."""
         try:
-            client = fujitsu.FujitsuHvac(url, username, password)
+            client = FujitsuHvac(url, username, password)
             await client.login()
             return True
-        except Exception:  # pylint: disable=broad-except
-            pass
+        except Exception as ex:  # pylint: disable=broad-except
+            print(ex)
         return False
 
 
