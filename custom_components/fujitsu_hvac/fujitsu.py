@@ -38,14 +38,36 @@ class FujitsuHvac:
             "logintime": (datetime.datetime.now()).isoformat(),
         }
 
-        async with session.post(
+        async def evaluate_response(response: ClientResponse) -> bool:
+            try:
+                body = await response.text()
+
+                if body == "4":
+                    _LOGGER.info("Already logged in, logging out and back in")
+                    await self.logout(session)
+                    return False
+                return True
+            except Exception:
+                return False
+
+        client = RetryClient(
+            raise_for_status=False,
+            retry_options=ExponentialRetry(
+                factor=2.0,
+                max_timeout=10.0,
+                attempts=10,
+                evaluate_response_callback=evaluate_response,
+            ),
+            client_session=session,
+        )
+
+        async with client.post(
             self.url("login.cgi"), data=payload, headers=HEADERS
         ) as response:
             response_body = await response.text()
             if response_body == "4":
-                _LOGGER.info("Already logged in, logging out and back in")
+                _LOGGER.info("Already logged in, not retrying anymore")
                 await self.logout(session)
-                await self.login(session)
                 return
             if response_body != "0":
                 raise Exception("Error response " + response_body)
@@ -142,7 +164,7 @@ class FujitsuHvac:
             ) as response:
                 await self.logout(session)
 
-                response_body = response.text()
+                response_body = await response.text()
                 if response_body != "0":
                     print("Error: " + response_body)
                     raise Exception("Error found")
