@@ -7,7 +7,9 @@
   "version": "0.0.0",
   "config_flow": true,
   "integration_type": "hub",
-  "requirements": [],
+  "requirements": [
+    "aiohttp-retry==2.8.3"
+  ],
   "codeowners": [
     "@xaro"
   ]

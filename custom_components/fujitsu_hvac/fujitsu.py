@@ -4,6 +4,7 @@ import datetime
 import aiohttp
 from .hvac_info import HvacInfo, Mode, FanSpeed
 import logging
+from aiohttp_retry import RetryClient, ExponentialRetry, ClientResponse
 
 HEADERS = {
     "X-Requested-With": "XMLHttpRequest",
@@ -42,7 +43,9 @@ class FujitsuHvac:
         ) as response:
             response_body = await response.text()
             if response_body == "4":
-                _LOGGER.info("Already logged in")
+                _LOGGER.info("Already logged in, logging out and back in")
+                await self.logout(session)
+                await self.login(session)
                 return
             if response_body != "0":
                 raise Exception("Error response " + response_body)
@@ -55,10 +58,33 @@ class FujitsuHvac:
 
     async def get_all_info(self):
         """Returns the info of all devices from the API"""
+        _LOGGER.info("Fujitsu: Gathering all data")
+
+        async def evaluate_response(response: ClientResponse) -> bool:
+            try:
+                body = await response.text()
+
+                if body == SESSION_ERROR:
+                    _LOGGER.error("Fujitsu Session error, retrying")
+                    return False
+                return True
+            except Exception:
+                return False
+
         async with self.__new_session() as session:
+            client = RetryClient(
+                raise_for_status=False,
+                retry_options=ExponentialRetry(
+                    factor=2.0,
+                    max_timeout=10.0,
+                    attempts=10,
+                    evaluate_response_callback=evaluate_response,
+                ),
+                client_session=session,
+            )
             await self.login(session)
 
-            async with session.post(
+            async with client.post(
                 self.url("getmondata.cgi"),
                 data={"FunctionNo": 2, "Argument1": -1},
                 headers=HEADERS,
@@ -67,10 +93,10 @@ class FujitsuHvac:
 
                 if body == SESSION_ERROR:
                     print("Session Error -13 found")
-                    # self.cookies = None
+
                     raise Exception("Session error found")
 
-                await self.logout(session)
+                _LOGGER.info("Fujitsu data gathered successfully")
 
                 infos = []
                 for info in body.split("\n"):

@@ -2,6 +2,7 @@
 from homeassistant import config_entries
 from homeassistant.core import callback
 import voluptuous as vol
+import aiohttp
 
 from .fujitsu import FujitsuHvac
 
@@ -89,7 +90,8 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Return true if credentials is valid."""
         try:
             client = FujitsuHvac(url, username, password)
-            await client.login()
+            async with aiohttp.ClientSession() as session:
+                await client.login(session)
             return True
         except Exception as ex:  # pylint: disable=broad-except
             print(ex)
