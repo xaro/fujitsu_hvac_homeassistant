@@ -1,18 +1,15 @@
 """
 Custom integration to integrate Fujitsu HVAC systems with Home Assistant.
 """
-import asyncio
 from datetime import timedelta
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Config, HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.core import HomeAssistant
 
 import fujitsu.fujitsu as lib
-
+from .coordinator import FujitsuCoordinator
+from .climate import FujitsuEntity
 from .const import (
     CONF_URL,
     CONF_PASSWORD,
@@ -26,11 +23,6 @@ SCAN_INTERVAL = timedelta(seconds=30)
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
-async def async_setup(hass: HomeAssistant, config: Config):
-    """Set up this integration using YAML is not supported."""
-    return True
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up this integration using UI."""
     if hass.data.get(DOMAIN) is None:
@@ -41,4 +33,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
 
+    client = lib.FujitsuHvac(base_url=url, username=username, password=password)
+    coordinator = create_coordinator(hass, client)
+
+    # Fetch initial data so we have data when entities subscribe
+    await coordinator.async_config_entry_first_refresh()
+
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+    await hass.config_entries.async_forward_entry_setup(entry, "climate")
+
     return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    if unload_ok := await hass.config_entries.async_unload_platform(entry, "climate"):
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
+
+
+def create_coordinator(
+    hass: HomeAssistant, client: lib.FujitsuHvac
+) -> FujitsuCoordinator:
+    """Creates a new Fujitsu coordinator"""
+    coordinator = FujitsuCoordinator(
+        hass, _LOGGER, client, name=DOMAIN, update_interval=SCAN_INTERVAL
+    )
+    return coordinator

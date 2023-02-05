@@ -1,5 +1,7 @@
-import datetime, random, aiohttp, asyncio, logging
+"""Client for communicating with Fujitsu API"""
 from urllib.parse import urljoin
+import datetime
+import aiohttp
 from .hvac_info import HvacInfo, Mode, FanSpeed
 
 
