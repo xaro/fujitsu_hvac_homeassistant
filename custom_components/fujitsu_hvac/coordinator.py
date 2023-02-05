@@ -24,7 +24,6 @@ class FujitsuCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from API endpoint."""
-        await self.client.login()
         results = await self.client.get_all_info()
 
         return results
