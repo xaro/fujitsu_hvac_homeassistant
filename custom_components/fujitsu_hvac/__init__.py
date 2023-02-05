@@ -7,7 +7,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-import fujitsu.fujitsu as lib
+from .fujitsu import FujitsuHvac
 from .coordinator import FujitsuCoordinator
 from .climate import FujitsuEntity
 from .const import (
@@ -33,7 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
 
-    client = lib.FujitsuHvac(base_url=url, username=username, password=password)
+    client = FujitsuHvac(base_url=url, username=username, password=password)
     coordinator = create_coordinator(hass, client)
 
     # Fetch initial data so we have data when entities subscribe
@@ -53,9 +53,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-def create_coordinator(
-    hass: HomeAssistant, client: lib.FujitsuHvac
-) -> FujitsuCoordinator:
+def create_coordinator(hass: HomeAssistant, client: FujitsuHvac) -> FujitsuCoordinator:
     """Creates a new Fujitsu coordinator"""
     coordinator = FujitsuCoordinator(
         hass, _LOGGER, client, name=DOMAIN, update_interval=SCAN_INTERVAL

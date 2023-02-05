@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 import datetime
 import aiohttp
 from .hvac_info import HvacInfo, Mode, FanSpeed
-
+import logging
 
 HEADERS = {
     "X-Requested-With": "XMLHttpRequest",
@@ -11,6 +11,8 @@ HEADERS = {
 }
 
 SESSION_ERROR = "-13"
+
+_LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
 class FujitsuHvac:
@@ -43,6 +45,9 @@ class FujitsuHvac:
             self.url("login.cgi"), data=payload, headers=HEADERS
         ) as response:
             response_body = await response.text()
+            if response_body == "4":
+                _LOGGER.info("Already logged in")
+                return
             if response_body != "0":
                 raise Exception("Error response " + response_body)
 

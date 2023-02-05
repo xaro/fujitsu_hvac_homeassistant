@@ -63,3 +63,7 @@ class HvacInfo:
         louver = int(data[20])
 
         return HvacInfo(circuit, sub_id, powered, mode, temp, fan_speed, louver)
+
+    def get_id(self) -> str:
+        """Returns the full ID of the unit"""
+        return f"{self.circuit}-{self.sub_id}"

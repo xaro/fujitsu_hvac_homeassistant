@@ -4,7 +4,7 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-import fujitsu.fujitsu as lib
+from .fujitsu import FujitsuHvac
 
 
 class FujitsuCoordinator(DataUpdateCoordinator):
@@ -14,7 +14,7 @@ class FujitsuCoordinator(DataUpdateCoordinator):
         self,
         hass: HomeAssistant,
         logger: logging.Logger,
-        client: lib.FujitsuHvac,
+        client: FujitsuHvac,
         name: str,
         update_interval: timedelta,
     ):
@@ -26,6 +26,5 @@ class FujitsuCoordinator(DataUpdateCoordinator):
         """Fetch data from API endpoint."""
         await self.client.login()
         results = await self.client.get_all_info()
-        await self.client.logout()
 
         return results

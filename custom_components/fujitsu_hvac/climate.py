@@ -55,11 +55,12 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         """Pass coordinator to CoordinatorEntity."""
         super().__init__(coordinator, context=idx)
         self.idx = idx
+        self._attr_unique_id = self.coordinator.data[self.idx].get_id()
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_target_temperature = self.coordinator.data[self.idx].temp
+        self._attr_current_temperature = self.coordinator.data[self.idx].temp
         self.async_write_ha_state()
 
     @property
