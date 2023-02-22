@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .fujitsu import FujitsuHvac
 
@@ -24,6 +25,6 @@ class FujitsuCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from API endpoint."""
-        results = await self.client.get_all_info()
+        results = await self.client.get_all_info(async_get_clientsession(self.hass))
 
         return results

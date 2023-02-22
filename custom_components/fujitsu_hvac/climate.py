@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .coordinator import FujitsuCoordinator
 from .fujitsu import Mode, HvacInfo
@@ -31,17 +32,21 @@ async def async_setup_entry(
     """Add entities for passed config_entry in HA."""
     coordinator: FujitsuCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
+    session = async_get_clientsession(hass)
+
     async_add_entities(
-        FujitsuEntity(coordinator, idx) for idx, _ in enumerate(coordinator.data)
+        FujitsuEntity(session, coordinator, idx)
+        for idx, _ in enumerate(coordinator.data)
     )
 
 
 class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
     """Fujitsu HVAC Unit controls."""
 
-    def __init__(self, coordinator, idx):
+    def __init__(self, session, coordinator, idx):
         """Pass coordinator to CoordinatorEntity."""
         super().__init__(coordinator, context=idx)
+        self.session = session
         self.idx = idx
         self._attr_unique_id = self.coordinator.data[self.idx].get_id()
 
@@ -98,6 +103,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         if hvac_mode == HVACMode.OFF:
             await self.coordinator.client.set_settings(
+                self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
                 change_power_status=True,
@@ -108,6 +114,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             )
         if hvac_mode == HVACMode.COOL:
             await self.coordinator.client.set_settings(
+                self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
                 power_status=True,
@@ -119,6 +126,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             )
         if hvac_mode == HVACMode.HEAT:
             await self.coordinator.client.set_settings(
+                self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
                 power_status=True,
@@ -130,6 +138,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             )
         if hvac_mode == HVACMode.DRY:
             await self.coordinator.client.set_settings(
+                self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
                 power_status=True,
@@ -147,6 +156,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         if (temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
         await self.coordinator.client.set_settings(
+            self.session,
             self.coordinator.data[self.idx].circuit,
             self.coordinator.data[self.idx].sub_id,
             power_status=True,

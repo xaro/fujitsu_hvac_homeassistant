@@ -1,5 +1,5 @@
 """Client for communicating with Fujitsu API"""
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import datetime
 import aiohttp
 from .hvac_info import HvacInfo, Mode, FanSpeed
@@ -76,9 +76,9 @@ class FujitsuHvac:
         """Logs out of the API"""
 
         async with session.post(self.url("logout.cgi")):
-            session.cookie_jar.clear()
+            session.cookie_jar.clear_domain(urlparse(self.base_url).netloc)
 
-    async def get_all_info(self):
+    async def get_all_info(self, session: aiohttp.ClientSession):
         """Returns the info of all devices from the API"""
         _LOGGER.info("Fujitsu: Gathering all data")
 
@@ -87,48 +87,48 @@ class FujitsuHvac:
                 body = await response.text()
 
                 if body == SESSION_ERROR:
+                    await self.login(session)
                     _LOGGER.error("Fujitsu Session error, retrying")
                     return False
                 return True
             except Exception:
                 return False
 
-        async with self.__new_session() as session:
-            client = RetryClient(
-                raise_for_status=False,
-                retry_options=ExponentialRetry(
-                    factor=2.0,
-                    max_timeout=10.0,
-                    attempts=10,
-                    evaluate_response_callback=evaluate_response,
-                ),
-                client_session=session,
-            )
-            await self.login(session)
+        client = RetryClient(
+            raise_for_status=False,
+            retry_options=ExponentialRetry(
+                factor=2.0,
+                max_timeout=10.0,
+                attempts=10,
+                evaluate_response_callback=evaluate_response,
+            ),
+            client_session=session,
+        )
 
-            async with client.post(
-                self.url("getmondata.cgi"),
-                data={"FunctionNo": 2, "Argument1": -1},
-                headers=HEADERS,
-            ) as response:
-                body = await response.text()
+        async with client.post(
+            self.url("getmondata.cgi"),
+            data={"FunctionNo": 2, "Argument1": -1},
+            headers=HEADERS,
+        ) as response:
+            body = await response.text()
 
-                if body == SESSION_ERROR:
-                    print("Session Error -13 found")
+            if body == SESSION_ERROR:
+                print("Session Error -13 found")
 
-                    raise Exception("Session error found")
+                raise Exception("Session error found")
 
-                _LOGGER.info("Fujitsu data gathered successfully")
+            _LOGGER.info("Fujitsu data gathered successfully")
 
-                infos = []
-                for info in body.split("\n"):
-                    if len(info.strip()) == 0:
-                        break
-                    infos.append(HvacInfo.from_info(info.split(",")))
-                return infos
+            infos = []
+            for info in body.split("\n"):
+                if len(info.strip()) == 0:
+                    break
+                infos.append(HvacInfo.from_info(info.split(",")))
+            return infos
 
     async def set_settings(
         self,
+        session: aiohttp.ClientSession,
         circuit: int,
         sub_id: int,
         power_status: bool,
@@ -142,40 +142,35 @@ class FujitsuHvac:
     ):
         """Sets the settings that are specified"""
 
-        async with self.__new_session() as session:
-            await self.login(session)
+        headers = {
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/json",
+            "X-CSRF-Token": "undefined",
+        }
 
-            headers = {
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/json",
-                "X-CSRF-Token": "undefined",
-            }
+        cmd = self.to_command_str(
+            circuit,
+            sub_id,
+            power_status,
+            mode,
+            fan_speed,
+            temp,
+            change_power_status,
+            change_mode,
+            change_fan_speed,
+            change_temp,
+        )
+        _LOGGER.info("CMD: " + cmd)
 
-            cmd = self.to_command_str(
-                circuit,
-                sub_id,
-                power_status,
-                mode,
-                fan_speed,
-                temp,
-                change_power_status,
-                change_mode,
-                change_fan_speed,
-                change_temp,
-            )
-            _LOGGER.info("CMD: " + cmd)
-
-            async with session.post(
-                self.url("command.cgi"),
-                data=r'{"arg1":"0","arg2":"' + cmd + r'"}"',
-                headers=headers,
-            ) as response:
-                await self.logout(session)
-
-                response_body = await response.text()
-                if response_body != "0":
-                    print("Error: " + response_body)
-                    raise Exception("Error found")
+        async with session.post(
+            self.url("command.cgi"),
+            data=r'{"arg1":"0","arg2":"' + cmd + r'"}"',
+            headers=headers,
+        ) as response:
+            response_body = await response.text()
+            if response_body != "0":
+                print("Error: " + response_body)
+                raise Exception("Error found")
 
     def url(self, path: str) -> str:
         """Returns the concatenated absolute URL"""
@@ -236,9 +231,3 @@ class FujitsuHvac:
 
     def __bool_to_command_str(self, changed_attr) -> int:
         return 1 if changed_attr else 0
-
-    @staticmethod
-    def __new_session() -> aiohttp.ClientSession:
-        return aiohttp.ClientSession(
-            cookie_jar=aiohttp.CookieJar(unsafe=True),
-        )
