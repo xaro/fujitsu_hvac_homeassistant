@@ -141,6 +141,31 @@ class FujitsuHvac:
         change_temp: bool = False,
     ):
         """Sets the settings that are specified"""
+        _LOGGER.info("Starting set_settings")
+
+        async def evaluate_response(response: ClientResponse) -> bool:
+            try:
+                body = await response.text()
+
+                if body == SESSION_ERROR:
+                    await self.login(session)
+                    _LOGGER.error("Fujitsu Session error, retrying")
+                    return False
+                return True
+            except Exception:
+                _LOGGER.error("Another exception: " + body)
+                return False
+
+        client = RetryClient(
+            raise_for_status=False,
+            retry_options=ExponentialRetry(
+                factor=2.0,
+                max_timeout=10.0,
+                attempts=10,
+                evaluate_response_callback=evaluate_response,
+            ),
+            client_session=session,
+        )
 
         headers = {
             "X-Requested-With": "XMLHttpRequest",
@@ -162,15 +187,17 @@ class FujitsuHvac:
         )
         _LOGGER.info("CMD: " + cmd)
 
-        async with session.post(
+        async with client.post(
             self.url("command.cgi"),
             data=r'{"arg1":"0","arg2":"' + cmd + r'"}"',
             headers=headers,
         ) as response:
             response_body = await response.text()
+            _LOGGER.info("Received response")
+
             if response_body != "0":
                 print("Error: " + response_body)
-                raise Exception("Error found")
+                raise Exception("Error found: " + response_body)
 
     def url(self, path: str) -> str:
         """Returns the concatenated absolute URL"""

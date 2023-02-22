@@ -83,7 +83,9 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
     @property
     def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available hvac operation modes."""
-        return [HVACMode.OFF, HVACMode.COOL, HVACMode.DRY, HVACMode.HEAT]
+        # return [HVACMode.OFF, HVACMode.COOL, HVACMode.DRY, HVACMode.HEAT]
+        # Only OFF and HEAT during the winter
+        return [HVACMode.OFF, HVACMode.HEAT]
 
     @property
     def hvac_mode(self) -> HVACMode | None:
@@ -101,7 +103,10 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             return HVACMode.OFF
 
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
+
         if hvac_mode == HVACMode.OFF:
+            self.coordinator.data[self.idx].power_status = False
+
             await self.coordinator.client.set_settings(
                 self.session,
                 self.coordinator.data[self.idx].circuit,
@@ -112,44 +117,34 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
                 fan_speed=self.coordinator.data[self.idx].fan_speed,
                 temp=self.coordinator.data[self.idx].temp,
             )
-        if hvac_mode == HVACMode.COOL:
+        else:
+            if hvac_mode == HVACMode.COOL:
+                fujitsu_mode = Mode.COOL
+            elif hvac_mode == HVACMode.HEAT:
+                fujitsu_mode = Mode.HEAT
+            elif hvac_mode == HVACMode.DRY:
+                fujitsu_mode = Mode.DRY
+            else:
+                raise Exception("Invalid hvac mode: " + hvac_mode)
+
+            self.coordinator.data[self.idx].power_status = True
+            self.coordinator.data[self.idx].mode = fujitsu_mode
+
             await self.coordinator.client.set_settings(
                 self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
+                change_power_status=True,
                 power_status=True,
-                mode=Mode.COOL,
+                change_mode=True,
+                mode=fujitsu_mode,
                 fan_speed=self.coordinator.data[self.idx].fan_speed,
                 temp=self.coordinator.data[self.idx].temp,
-                change_power_status=True,
-                change_mode=True,
-            )
-        if hvac_mode == HVACMode.HEAT:
-            await self.coordinator.client.set_settings(
-                self.session,
-                self.coordinator.data[self.idx].circuit,
-                self.coordinator.data[self.idx].sub_id,
-                power_status=True,
-                mode=Mode.HEAT,
-                fan_speed=self.coordinator.data[self.idx].fan_speed,
-                temp=self.coordinator.data[self.idx].temp,
-                change_power_status=True,
-                change_mode=True,
-            )
-        if hvac_mode == HVACMode.DRY:
-            await self.coordinator.client.set_settings(
-                self.session,
-                self.coordinator.data[self.idx].circuit,
-                self.coordinator.data[self.idx].sub_id,
-                power_status=True,
-                mode=Mode.DRY,
-                fan_speed=self.coordinator.data[self.idx].fan_speed,
-                temp=self.coordinator.data[self.idx].temp,
-                change_power_status=True,
-                change_mode=True,
             )
 
         self.coordinator.async_update_listeners()
+
+        await self.coordinator.async_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
@@ -167,3 +162,5 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         )
 
         self.coordinator.async_update_listeners()
+
+        await self.coordinator.async_refresh()
