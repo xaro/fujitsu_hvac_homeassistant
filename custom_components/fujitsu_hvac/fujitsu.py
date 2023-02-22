@@ -127,15 +127,18 @@ class FujitsuHvac:
                     infos.append(HvacInfo.from_info(info.split(",")))
                 return infos
 
-    # @retry_with_backoff(retries=3)
     async def set_settings(
         self,
         circuit: int,
         sub_id: int,
-        new_power_status: bool = None,
-        new_mode: Mode = None,
-        new_fan_speed: FanSpeed = None,
-        new_temp: float = None,
+        power_status: bool,
+        mode: Mode,
+        fan_speed: FanSpeed,
+        temp: float,
+        change_power_status: bool = False,
+        change_mode: bool = False,
+        change_fan_speed: bool = False,
+        change_temp: bool = False,
     ):
         """Sets the settings that are specified"""
 
@@ -145,21 +148,26 @@ class FujitsuHvac:
             headers = {
                 "X-Requested-With": "XMLHttpRequest",
                 "Content-Type": "application/json",
+                "X-CSRF-Token": "undefined",
             }
+
+            cmd = self.to_command_str(
+                circuit,
+                sub_id,
+                power_status,
+                mode,
+                fan_speed,
+                temp,
+                change_power_status,
+                change_mode,
+                change_fan_speed,
+                change_temp,
+            )
+            _LOGGER.info("CMD: " + cmd)
 
             async with session.post(
                 self.url("command.cgi"),
-                data={
-                    "arg1": 0,
-                    "arg2": self.to_command_str(
-                        circuit,
-                        sub_id,
-                        new_power_status,
-                        new_mode,
-                        new_fan_speed,
-                        new_temp,
-                    ),
-                },
+                data=r'{"arg1":"0","arg2":"' + cmd + r'"}"',
                 headers=headers,
             ) as response:
                 await self.logout(session)
@@ -177,23 +185,27 @@ class FujitsuHvac:
         self,
         circuit: int,
         sub_id: int,
-        new_power_status: bool = None,
-        new_mode: Mode = None,
-        new_fan_speed: FanSpeed = None,
-        new_temp: float = None,
+        power_status: bool,
+        mode: Mode,
+        fan_speed: FanSpeed,
+        temp: float,
+        change_power_status: bool = False,
+        change_mode: bool = False,
+        change_fan_speed: bool = False,
+        change_temp: bool = False,
     ):
         """Encodes settings to a command that can be sent to the API"""
         cmd = [
             circuit + 1,
             sub_id + 1,
-            self.__to_change_str(new_power_status),
-            0 if new_power_status else self.__bool_to_command_str(new_power_status),
-            self.__to_change_str(new_mode),
-            0 if new_mode is None else new_mode.cmd_value,
-            self.__to_change_str(new_fan_speed),
-            0 if new_fan_speed is None else new_fan_speed.value,
-            self.__to_change_str(new_temp),
-            0 if new_temp is None else int(new_temp * 2),
+            self.__bool_to_command_str(change_power_status),
+            self.__bool_to_command_str(power_status),
+            self.__bool_to_command_str(change_mode),
+            mode.cmd_value,
+            self.__bool_to_command_str(change_fan_speed),
+            1,
+            self.__bool_to_command_str(change_temp),
+            int(temp * 2),
             0,  # Changed air vert?
             0,  # Air vert
             0,
@@ -221,9 +233,6 @@ class FujitsuHvac:
             0,  # Hot temp
         ]
         return ",".join([r"\"" + str(val) + r"\"" for val in cmd]) + r"\r\n"
-
-    def __to_change_str(self, changed_attr) -> int:
-        return self.__bool_to_command_str(changed_attr is None)
 
     def __bool_to_command_str(self, changed_attr) -> int:
         return 1 if changed_attr else 0
