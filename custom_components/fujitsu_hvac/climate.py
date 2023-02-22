@@ -142,9 +142,10 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
                 temp=self.coordinator.data[self.idx].temp,
             )
 
-        self.coordinator.async_update_listeners()
+        self._attr_hvac_mode = hvac_mode
 
-        await self.coordinator.async_refresh()
+        self.coordinator.async_update_listeners()
+        await self.async_update_ha_state(force_refresh=True)
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
@@ -161,6 +162,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             change_temp=True,
         )
 
-        self.coordinator.async_update_listeners()
+        self._attr_target_temperature = temperature
 
-        await self.coordinator.async_refresh()
+        self.coordinator.async_update_listeners()
+        await self.async_update_ha_state(force_refresh=True)
