@@ -83,9 +83,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
     @property
     def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available hvac operation modes."""
-        # return [HVACMode.OFF, HVACMode.COOL, HVACMode.DRY, HVACMode.HEAT]
-        # Only OFF and HEAT during the winter
-        return [HVACMode.OFF, HVACMode.HEAT]
+        return [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.DRY]
 
     @property
     def hvac_mode(self) -> HVACMode | None:
