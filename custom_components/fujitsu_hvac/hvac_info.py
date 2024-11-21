@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import StrEnum, Enum
-from typing import List, TypeVar
+from typing import List, TypeVar, Any
 
 
 TMode = TypeVar("TMode", bound="Mode")
@@ -37,7 +37,7 @@ class HvacInfo:
     louver: int
 
     @staticmethod
-    def from_json(data: dict):
+    def from_json(data: dict[str, Any]):
         """Creates an HvacInfo object from the data coming from the info API"""
         circuit = data["circuit"]
         sub_id = data["sub_id"]

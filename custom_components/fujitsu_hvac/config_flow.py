@@ -3,6 +3,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import voluptuous as vol
 import aiohttp
+from typing import Any
 
 from .fujitsu import FujitsuHvac
 
