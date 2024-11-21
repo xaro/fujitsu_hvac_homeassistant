@@ -12,8 +12,6 @@ ICON = "mdi:format-quote-close"
 
 # Configuration and options
 CONF_ENABLED = "enabled"
-CONF_USERNAME = "username"
-CONF_PASSWORD = "password"
 CONF_URL = "url"
 
 # Defaults

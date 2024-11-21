@@ -30,11 +30,9 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         user_input[CONF_URL] = ""
 
         return await self._show_config_form(user_input)
-
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        return FujitsuHvacOptionsFlowHandler(config_entry)
+    
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        return await self._show_config_form(user_input)
 
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit data."""
@@ -51,41 +49,4 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=self._errors,
-        )
-
-
-class FujitsuHvacOptionsFlowHandler(config_entries.OptionsFlow):
-    """Fujitsu Hvac config flow options handler."""
-
-    def __init__(self, config_entry):
-        """Initialize HACS options flow."""
-        self.config_entry = config_entry
-        self.options = dict(config_entry.options)
-
-    async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
-        """Manage the options."""
-        return await self.async_step_user()
-
-    async def async_step_user(self, user_input=None):
-        """Handle a flow initialized by the user."""
-        if user_input is not None:
-            self.options.update(user_input)
-            return await self._update_options()
-
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        "climate", default=self.options.get("climate", True)
-                    ): bool
-                }
-            ),
-        )
-
-    async def _update_options(self):
-        """Update config entry options."""
-        return self.async_create_entry(
-            title="%s" % (self.config_entry[CONF_URL]),
-            data=self.options,
         )

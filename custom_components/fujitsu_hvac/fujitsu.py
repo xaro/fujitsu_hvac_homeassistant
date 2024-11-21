@@ -12,7 +12,7 @@ _LOGGER: logging.Logger = logging.getLogger(__package__)
 class FujitsuHvac:
     """Client for the Fujitsu HVAC API"""
 
-    def __init__(self, base_url: str, username: str, password: str) -> None:
+    def __init__(self, base_url: str) -> None:
         self.base_url = base_url
 
     async def get_all_info(self, session: aiohttp.ClientSession):
@@ -51,3 +51,7 @@ class FujitsuHvac:
         }) as response:
             response_body = await response.text()
             _LOGGER.info("Received response " + response_body)
+    
+    def url(self, path: str) -> str:
+        """Returns the concatenated absolute URL"""
+        return urljoin(self.base_url, path)

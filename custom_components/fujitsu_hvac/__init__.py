@@ -13,8 +13,6 @@ from .coordinator import FujitsuCoordinator
 from .climate import FujitsuEntity
 from .const import (
     CONF_URL,
-    CONF_PASSWORD,
-    CONF_USERNAME,
     DOMAIN,
     STARTUP_MESSAGE,
 )
@@ -31,10 +29,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         _LOGGER.info(STARTUP_MESSAGE)
 
     url = entry.data.get(CONF_URL)
-    username = entry.data.get(CONF_USERNAME)
-    password = entry.data.get(CONF_PASSWORD)
 
-    client = FujitsuHvac(base_url=url, username=username, password=password)
+    client = FujitsuHvac(base_url=url)
     coordinator = create_coordinator(hass, client)
 
     # Fetch initial data so we have data when entities subscribe
