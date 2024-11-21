@@ -19,7 +19,7 @@ class FujitsuHvac:
         """Returns the info of all devices from the API"""
         _LOGGER.info("Fujitsu: Gathering all data")
 
-        async with client.get(self.url("data")) as response:
+        async with session.get(self.url("data")) as response:
             body = await response.text()
             data = json.loads(body)
 
@@ -33,7 +33,7 @@ class FujitsuHvac:
     async def set_mode(self, session: aiohttp.ClientSession, circuit: int, sub_id: int, mode: Mode):
         _LOGGER.info("Starting set_mode")
 
-        async with client.post(self.url("set_mode"), json={
+        async with session.post(self.url("set_mode"), json={
             "circuit": circuit,
 	        "sub_id": sub_id,
 	        "mode": mode.value
@@ -44,7 +44,7 @@ class FujitsuHvac:
     async def set_temp(self, session: aiohttp.ClientSession, circuit: int, sub_id: int, temp: float):
         _LOGGER.info("Starting set_temp")
 
-        async with client.post(self.url("set_temperature"), json={
+        async with session.post(self.url("set_temperature"), json={
             "circuit": circuit,
 	        "sub_id": sub_id,
 	        "new_temp_c": temp
