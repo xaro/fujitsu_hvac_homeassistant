@@ -3,7 +3,7 @@
 NAME = "Fujitsu HVAC"
 DOMAIN = "fujitsu_hvac"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.0.7"
+VERSION = "0.0.8"
 ATTRIBUTION = ""
 ISSUE_URL = ""
 

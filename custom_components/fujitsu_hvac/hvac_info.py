@@ -47,4 +47,4 @@ class HvacInfo:
         fan_speed = FanSpeed[data["fan_speed"]]
         louver = data["louver"]
 
-        return HvacInfo(circuit, sub_id, powered, mode, temp, fan_speed, louver)
+        return HvacInfo(circuit, sub_id, powered, mode, target_temp, fan_speed, louver)
