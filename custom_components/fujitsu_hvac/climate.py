@@ -48,7 +48,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         super().__init__(coordinator, context=idx)
         self.session = session
         self.idx = idx
-        self._attr_unique_id = self.coordinator.data[self.idx].get_id()
+        self._attr_unique_id = str(self.coordinator.data[self.idx].circuit) + str(self.coordinator.data[self.idx].sub_id)
 
     @callback
     def _handle_coordinator_update(self) -> None:
