@@ -36,7 +36,7 @@ class FujitsuHvac:
         async with client.post(self.url("set_mode"), json={
             "circuit": circuit,
 	        "sub_id": sub_id,
-	        "mode": mode
+	        "mode": mode.value
         }) as response:
             response_body = await response.text()
             _LOGGER.info("Received response " + response_body)
