@@ -8,8 +8,6 @@ from .fujitsu import FujitsuHvac
 
 from .const import (
     CONF_URL,
-    CONF_PASSWORD,
-    CONF_USERNAME,
     DOMAIN,
 )
 
@@ -26,29 +24,10 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-        self._errors = {}
-
-        if user_input is not None:
-            valid = await self._test_credentials(
-                user_input[CONF_URL],
-                user_input[CONF_USERNAME],
-                user_input[CONF_PASSWORD],
-            )
-            if valid:
-                return self.async_create_entry(
-                    title="%s %s" % (user_input[CONF_URL], user_input[CONF_USERNAME]),
-                    data=user_input,
-                )
-            else:
-                self._errors["base"] = "Error testing login"
-
-            return await self._show_config_form(user_input)
 
         user_input = {}
         # Provide defaults for form
         user_input[CONF_URL] = ""
-        user_input[CONF_USERNAME] = ""
-        user_input[CONF_PASSWORD] = ""
 
         return await self._show_config_form(user_input)
 
@@ -69,33 +48,10 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         msg="URL",
                         description="URL",
                     ): str,
-                    vol.Required(
-                        CONF_USERNAME,
-                        msg="Username",
-                        description="Username",
-                        default=user_input[CONF_USERNAME],
-                    ): str,
-                    vol.Required(
-                        CONF_PASSWORD,
-                        msg="Password",
-                        description="Password",
-                        default=user_input[CONF_PASSWORD],
-                    ): str,
                 }
             ),
             errors=self._errors,
         )
-
-    async def _test_credentials(self, url, username, password):
-        """Return true if credentials is valid."""
-        try:
-            client = FujitsuHvac(url, username, password)
-            async with aiohttp.ClientSession() as session:
-                await client.login(session)
-            return True
-        except Exception as ex:  # pylint: disable=broad-except
-            print(ex)
-        return False
 
 
 class FujitsuHvacOptionsFlowHandler(config_entries.OptionsFlow):
@@ -130,7 +86,6 @@ class FujitsuHvacOptionsFlowHandler(config_entries.OptionsFlow):
     async def _update_options(self):
         """Update config entry options."""
         return self.async_create_entry(
-            title="%s %s"
-            % (self.config_entry[CONF_URL], self.config_entry[CONF_USERNAME]),
+            title="%s" % (self.config_entry[CONF_URL]),
             data=self.options,
         )
