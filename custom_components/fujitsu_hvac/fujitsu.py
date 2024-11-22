@@ -36,7 +36,7 @@ class FujitsuHvac:
         async with session.post(self.url("set_mode"), json={
             "circuit": circuit,
 	        "sub_id": sub_id,
-	        "mode": mode.value
+	        "mode": mode
         }) as response:
             response_body = await response.text()
             _LOGGER.info("Received response " + response_body)
