@@ -97,7 +97,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             elif self.coordinator.data[self.idx].mode == Mode.Dry:
                 return HVACMode.DRY
             else:
-                return None
+                return HVACMode.OFF
         else:
             return HVACMode.OFF
 
@@ -105,6 +105,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
 
         if hvac_mode == HVACMode.OFF:
             self.coordinator.data[self.idx].powered = False
+            self.coordinator.data[self.idx].mode = Mode.Off
 
             await self.coordinator.client.set_mode(
                 self.session,
@@ -122,7 +123,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             else:
                 raise Exception("Invalid hvac mode: " + hvac_mode)
 
-            self.coordinator.data[self.idx].power_status = True
+            self.coordinator.data[self.idx].powered = True
             self.coordinator.data[self.idx].mode = fujitsu_mode
 
             await self.coordinator.client.set_settings(
