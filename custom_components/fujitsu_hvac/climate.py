@@ -109,7 +109,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
                 self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
-                mode="Off"
+                mode=Mode.Off
             )
         else:
             if hvac_mode == HVACMode.COOL:

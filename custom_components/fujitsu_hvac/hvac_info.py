@@ -12,6 +12,7 @@ class Mode(Enum):
     Cool = "Cool"
     Dry = "Dry"
     Heat = "Heat"
+    Off = "Off"
 
 
 class FanSpeed(StrEnum):
