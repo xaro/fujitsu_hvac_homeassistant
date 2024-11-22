@@ -89,11 +89,11 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
     def hvac_mode(self) -> HVACMode | None:
         """Return hvac operation ie. heat, cool mode."""
         if self.coordinator.data[self.idx].powered:
-            if self.coordinator.data[self.idx].mode == Mode.COOL:
+            if self.coordinator.data[self.idx].mode == Mode.Cool:
                 return HVACMode.COOL
-            elif self.coordinator.data[self.idx].mode == Mode.HEAT:
+            elif self.coordinator.data[self.idx].mode == Mode.Heat:
                 return HVACMode.HEAT
-            elif self.coordinator.data[self.idx].mode == Mode.DRY:
+            elif self.coordinator.data[self.idx].mode == Mode.Dry:
                 return HVACMode.DRY
             else:
                 return None
