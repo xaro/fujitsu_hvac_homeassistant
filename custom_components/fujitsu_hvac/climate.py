@@ -55,6 +55,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         """Handle updated data from the coordinator."""
         self._attr_current_temperature = self.coordinator.data[self.idx].target_temp
         self._attr_target_temperature = self.coordinator.data[self.idx].target_temp
+        self._attr_hvac_mode = hvac_mode
         self.async_write_ha_state()
 
     @property
