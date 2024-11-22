@@ -41,7 +41,7 @@ class FujitsuHvac:
             response_body = await response.text()
             _LOGGER.info("Received response " + response_body)
     
-    async def set_temp(self, session: aiohttp.ClientSession, circuit: int, sub_id: int, temp: float):
+    async def set_temperature(self, session: aiohttp.ClientSession, circuit: int, sub_id: int, temp: float):
         _LOGGER.info("Starting set_temp")
 
         async with session.post(self.url("set_temperature"), json={
