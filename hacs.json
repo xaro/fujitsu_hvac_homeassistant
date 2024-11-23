@@ -4,5 +4,5 @@
     "domains": [
         "climate"
     ],
-    "homeassistant": "0.118.0"
+    "homeassistant": "2024.6.0"
 }
