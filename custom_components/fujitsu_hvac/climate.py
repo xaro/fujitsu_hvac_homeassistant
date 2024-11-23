@@ -1,34 +1,43 @@
 """Climate entity definition for Fujitsu HVAC."""
+
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+import logging
 
 from homeassistant.components.climate import (
     ClimateEntity,
+)
+from homeassistant.components.climate.const import (
     ClimateEntityFeature,
     HVACMode,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     PRECISION_HALVES,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
-from homeassistant.core import callback
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .coordinator import FujitsuCoordinator
-from .fujitsu import Mode, HvacInfo
 from .const import DOMAIN
+from .coordinator import FujitsuCoordinator
+from .fujitsu import Mode
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+
+_LOGGER: logging.Logger = logging.getLogger(__package__)
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-):
+) -> None:
     """Add entities for passed config_entry in HA."""
     coordinator: FujitsuCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
@@ -48,7 +57,9 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         super().__init__(coordinator, context=idx)
         self.session = session
         self.idx = idx
-        self._attr_unique_id = str(self.coordinator.data[self.idx].circuit) + str(self.coordinator.data[self.idx].sub_id)
+        self._attr_unique_id = str(self.coordinator.data[self.idx].circuit) + str(
+            self.coordinator.data[self.idx].sub_id
+        )
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -64,6 +75,8 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         features: int = 0
 
         features |= ClimateEntityFeature.TARGET_TEMPERATURE
+        features |= ClimateEntityFeature.TURN_OFF
+        features |= ClimateEntityFeature.TURN_ON
 
         return features
 
@@ -79,12 +92,12 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
     @property
     def temperature_unit(self):
         """Temperature of the API is always celsius."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available hvac operation modes."""
-        return [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.DRY]
+        return [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL]
 
     @property
     def hvac_mode(self) -> HVACMode | None:
@@ -92,17 +105,14 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
         if self.coordinator.data[self.idx].powered:
             if self.coordinator.data[self.idx].mode == Mode.Cool:
                 return HVACMode.COOL
-            elif self.coordinator.data[self.idx].mode == Mode.Heat:
+            if self.coordinator.data[self.idx].mode == Mode.Heat:
                 return HVACMode.HEAT
-            elif self.coordinator.data[self.idx].mode == Mode.Dry:
+            if self.coordinator.data[self.idx].mode == Mode.Dry:
                 return HVACMode.DRY
-            else:
-                return HVACMode.OFF
-        else:
             return HVACMode.OFF
+        return HVACMode.OFF
 
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
-
         if hvac_mode == HVACMode.OFF:
             self.coordinator.data[self.idx].powered = False
             self.coordinator.data[self.idx].mode = Mode.Off
@@ -111,7 +121,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
                 self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
-                mode=Mode.Off
+                mode=Mode.Off,
             )
         else:
             if hvac_mode == HVACMode.COOL:
@@ -130,10 +140,37 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
                 self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
-                fujitsu_mode
+                fujitsu_mode,
             )
 
-        self._attr_hvac_mode = hvac_mode
+        self._attr_hvac_mode = HVACMode(hvac_mode)
+
+        self.coordinator.async_update_listeners()
+        await self.async_update_ha_state(force_refresh=True)
+
+    async def async_turn_off(self) -> None:
+        self.coordinator.data[self.idx].powered = False
+        self.coordinator.data[self.idx].mode = Mode.Off
+
+        await self.coordinator.client.set_mode(
+            self.session,
+            self.coordinator.data[self.idx].circuit,
+            self.coordinator.data[self.idx].sub_id,
+            Mode.Off,
+        )
+
+        self.coordinator.async_update_listeners()
+        await self.async_update_ha_state(force_refresh=True)
+
+    async def async_turn_on(self) -> None:
+        self.coordinator.data[self.idx].powered = True
+
+        await self.coordinator.client.set_mode(
+            self.session,
+            self.coordinator.data[self.idx].circuit,
+            self.coordinator.data[self.idx].sub_id,
+            self.coordinator.data[self.idx].mode,
+        )
 
         self.coordinator.async_update_listeners()
         await self.async_update_ha_state(force_refresh=True)
@@ -146,7 +183,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             self.session,
             self.coordinator.data[self.idx].circuit,
             self.coordinator.data[self.idx].sub_id,
-            temperature
+            temperature,
         )
 
         self._attr_target_temperature = temperature
