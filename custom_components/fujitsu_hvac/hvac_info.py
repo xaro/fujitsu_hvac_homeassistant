@@ -1,13 +1,14 @@
-from dataclasses import dataclass
-from enum import StrEnum, Enum
-from typing import List, TypeVar, Any
+"""Model for HVAC data."""
 
+from dataclasses import dataclass
+from enum import Enum, StrEnum
+from typing import Any, TypeVar
 
 TMode = TypeVar("TMode", bound="Mode")
 
 
 class Mode(Enum):
-    """Mode of heating/cooling"""
+    """Mode of heating/cooling."""
 
     Cool = "Cool"
     Dry = "Dry"
@@ -16,7 +17,7 @@ class Mode(Enum):
 
 
 class FanSpeed(StrEnum):
-    """Speed of the fan of an individual unit"""
+    """Speed of the fan of an individual unit."""
 
     Min = "Min"
     Mid = "Mid"
@@ -27,7 +28,7 @@ class FanSpeed(StrEnum):
 
 @dataclass
 class HvacInfo:
-    """Value class for information of an individual unit"""
+    """Value class for information of an individual unit."""
 
     circuit: int
     sub_id: int
@@ -38,8 +39,8 @@ class HvacInfo:
     louver: int
 
     @staticmethod
-    def from_json(data: dict[str, Any]):
-        """Creates an HvacInfo object from the data coming from the info API"""
+    def from_json(data: dict[str, Any]) -> Any:
+        """Create an HvacInfo object from the data coming from the info API."""
         circuit = data["circuit"]
         sub_id = data["sub_id"]
         powered = data["powered"]

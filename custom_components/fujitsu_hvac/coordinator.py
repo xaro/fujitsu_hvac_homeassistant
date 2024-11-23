@@ -1,15 +1,17 @@
+"""Coordinator to manage Fujitsu data."""
+
 import logging
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .fujitsu import FujitsuHvac
 
 
 class FujitsuCoordinator(DataUpdateCoordinator):
-    """Coordinator to manage Fujitsu data"""
+    """Coordinator to manage Fujitsu data."""
 
     def __init__(
         self,
@@ -25,6 +27,4 @@ class FujitsuCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from API endpoint."""
-        results = await self.client.get_all_info(async_get_clientsession(self.hass))
-
-        return results
+        return await self.client.get_all_info(async_get_clientsession(self.hass))

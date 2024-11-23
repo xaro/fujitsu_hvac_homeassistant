@@ -1,11 +1,9 @@
 """Adds config flow for Blueprint."""
-from homeassistant import config_entries
-from homeassistant.core import callback
-import voluptuous as vol
-import aiohttp
+
 from typing import Any
 
-from .fujitsu import FujitsuHvac
+import voluptuous as vol
+from homeassistant import config_entries
 
 from .const import (
     CONF_URL,
@@ -37,7 +35,7 @@ class FujitsuHvacFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         user_input[CONF_URL] = ""
 
         return await self._show_config_form(user_input)
-    
+
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
         return await self._show_config_form(user_input)
 
