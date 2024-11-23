@@ -126,7 +126,7 @@ class FujitsuEntity(CoordinatorEntity[FujitsuCoordinator], ClimateEntity):
             self.coordinator.data[self.idx].powered = True
             self.coordinator.data[self.idx].mode = fujitsu_mode
 
-            await self.coordinator.client.set_settings(
+            await self.coordinator.client.set_mode(
                 self.session,
                 self.coordinator.data[self.idx].circuit,
                 self.coordinator.data[self.idx].sub_id,
