@@ -4,7 +4,7 @@
   "documentation": "",
   "iot_class": "local_polling",
   "issue_tracker": "",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "config_flow": true,
   "integration_type": "hub",
   "requirements": [],
